@@ -1,15 +1,18 @@
 package paxos
 
-import "testing"
-import "runtime"
-import "strconv"
-import "os"
-import "time"
-import "fmt"
-import "math/rand"
-import crand "crypto/rand"
-import "encoding/base64"
-import "sync/atomic"
+import (
+	"fmt"
+	"math/rand"
+	"os"
+	"runtime"
+	"strconv"
+	"testing"
+	"time"
+
+	crand "crypto/rand"
+	"encoding/base64"
+	"sync/atomic"
+)
 
 func randstring(n int) string {
 	b := make([]byte, 2*n)
@@ -34,6 +37,7 @@ func ndecided(t *testing.T, pxa []*Paxos, seq int) int {
 	var v interface{}
 	for i := 0; i < len(pxa); i++ {
 		if pxa[i] != nil {
+			/*不仅要做出决策，并且决策出来的结果要保持一致*/
 			decided, v1 := pxa[i].Status(seq)
 			if decided == Decided {
 				if count > 0 && v != v1 {
@@ -115,19 +119,22 @@ func TestBasic(t *testing.T) {
 	runtime.GOMAXPROCS(4)
 
 	const npaxos = 3
+	// 切片，三个节点
 	var pxa []*Paxos = make([]*Paxos, npaxos)
 	var pxh []string = make([]string, npaxos)
 	defer cleanup(pxa)
 
 	for i := 0; i < npaxos; i++ {
+		// port是一个函数，用来生成本地套接字的名称
 		pxh[i] = port("basic", i)
 	}
 	for i := 0; i < npaxos; i++ {
+		// 指针为什么可以用make创建？为什么创建指针类型
 		pxa[i] = Make(pxh, i, nil)
 	}
 
 	fmt.Printf("Test: Single proposer ...\n")
-
+	// 0号节点发起投票
 	pxa[0].Start(0, "hello")
 	waitn(t, pxa, 0, npaxos)
 
@@ -365,9 +372,7 @@ func TestManyForget(t *testing.T) {
 	fmt.Printf("  ... Passed\n")
 }
 
-//
 // does paxos forgetting actually free the memory?
-//
 func TestForgetMem(t *testing.T) {
 	runtime.GOMAXPROCS(4)
 
@@ -453,9 +458,7 @@ func TestForgetMem(t *testing.T) {
 	fmt.Printf("  ... Passed\n")
 }
 
-//
 // does Max() work after Done()s?
-//
 func TestDoneMax(t *testing.T) {
 	runtime.GOMAXPROCS(4)
 
@@ -572,9 +575,7 @@ func TestRPCCount(t *testing.T) {
 	fmt.Printf("  ... Passed\n")
 }
 
-//
 // many agreements (without failures)
-//
 func TestMany(t *testing.T) {
 	runtime.GOMAXPROCS(4)
 
@@ -621,10 +622,8 @@ func TestMany(t *testing.T) {
 	fmt.Printf("  ... Passed\n")
 }
 
-//
 // a peer starts up, with proposal, after others decide.
 // then another peer starts, without a proposal.
-//
 func TestOld(t *testing.T) {
 	runtime.GOMAXPROCS(4)
 
@@ -659,9 +658,7 @@ func TestOld(t *testing.T) {
 	fmt.Printf("  ... Passed\n")
 }
 
-//
 // many agreements, with unreliable RPC
-//
 func TestManyUnreliable(t *testing.T) {
 	runtime.GOMAXPROCS(4)
 
